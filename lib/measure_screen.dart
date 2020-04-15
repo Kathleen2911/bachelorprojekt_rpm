@@ -37,6 +37,9 @@ class _MessScreenState extends State<MessScreen> {
 
   int updateIndex;
   List<String> messung = new List(4);
+  List<bool> _startIsPressed = [false, false, false, false];
+  List<bool> _stopIsPressed = [false, false, false, false];
+
 
   @override
   // wird bei Start der App ausgeführt
@@ -137,16 +140,16 @@ class _MessScreenState extends State<MessScreen> {
                 return Column(children: <Widget>[
                   Row(
                     children: <Widget>[
-                      buildCard(services, valFrontLeft, "VORNE LINKS", 0),
-                      buildCard(services, valFrontRight, "VORNE RECHTS", 1),
+                      Expanded(child: buildCard(services, valFrontLeft, "VORNE LINKS", 0),),
+                      Expanded(child: buildCard(services, valFrontRight, "VORNE RECHTS", 1),),
                     ],
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                     child: Row(
                       children: <Widget>[
-                        buildCard(services, valBackLeft, "HINTEN LINKS", 2),
-                        buildCard(services, valBackRight, "HINTEN RECHTS", 3),
+                        Expanded(child: buildCard(services, valBackLeft, "HINTEN LINKS", 2),),
+                        Expanded(child: buildCard(services, valBackRight, "HINTEN RECHTS", 3),),
                       ],
                     ),
                   ),
@@ -232,12 +235,17 @@ class _MessScreenState extends State<MessScreen> {
               },
             ),
 
+
             // Buttons zum Ändern des Messwertes
             ButtonBar(
               alignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
                 GestureDetector(
                   onTap: () {
+                    setState(() {
+                      _startIsPressed[index] = !_startIsPressed[index];
+                    });
+
                     for (BluetoothService service in services) {
                       if (service.uuid.toString().substring(4, 8) == "ffe0") {
                         for (char in service.characteristics) {
@@ -251,9 +259,8 @@ class _MessScreenState extends State<MessScreen> {
                     }
                   },
                   child: NeuCard(
-                    width: 62,
-                    height: 40,
-                    curveType: CurveType.concave,
+                    padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
+                    curveType: _startIsPressed[index] ? CurveType.flat : CurveType.concave,
                     bevel: 7,
                     decoration: NeumorphicDecoration(
                         borderRadius: BorderRadius.circular(10)),
@@ -261,7 +268,7 @@ class _MessScreenState extends State<MessScreen> {
                       child: Text(
                         "START",
                         style: TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: _startIsPressed[index] ? Theme.of(context).primaryColor : Theme.of(context).accentColor,
                           fontSize: 10,
                         ),
                       ),
@@ -270,14 +277,17 @@ class _MessScreenState extends State<MessScreen> {
                 ),
                 GestureDetector(
                   onTap: () {
+                    setState(() {
+                      _stopIsPressed[index] = !_stopIsPressed[index];
+                    });
+
                     char.setNotifyValue(!char.isNotifying);
                     messung[index] = tmp;
                     wheel.close();
                   },
                   child: NeuCard(
-                    width: 62,
-                    height: 40,
-                    curveType: CurveType.concave,
+                    padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 18.0),
+                    curveType: _stopIsPressed[index] ? CurveType.flat : CurveType.concave,
                     bevel: 7,
                     decoration: NeumorphicDecoration(
                         borderRadius: BorderRadius.circular(10)),
@@ -285,7 +295,7 @@ class _MessScreenState extends State<MessScreen> {
                       child: Text(
                         "STOP",
                         style: TextStyle(
-                          color: Theme.of(context).accentColor,
+                          color: _stopIsPressed[index] ? Theme.of(context).primaryColor : Theme.of(context).accentColor,
                           fontSize: 10,
                         ),
                       ),
@@ -325,23 +335,23 @@ class _MessScreenState extends State<MessScreen> {
             vr: messung[1],
             hl: messung[2],
             hr: messung[3]);
-        dbmanager.insertReifen(rf).then((id) => {
-              _zeichenController.clear(),
-              print('Reifen wurde in die Datenbank Nummer $id hinzugefügt')
+        dbmanager.insertReifen(rf).then((id) {
+              _zeichenController.clear();
+              print('Reifen wurde in die Datenbank Nummer $id hinzugefügt');
             });
       } else {
         reifen.zeichen = _zeichenController.text;
 
-        dbmanager.updateReifen(reifen).then((id) => {
+        dbmanager.updateReifen(reifen).then((id) {
               setState(() {
                 reifenList[updateIndex].zeichen = _zeichenController.text;
                 reifenList[updateIndex].vl = messung[0];
                 reifenList[updateIndex].vr = messung[1];
                 reifenList[updateIndex].hl = messung[2];
                 reifenList[updateIndex].hr = messung[3];
-              }),
-              _zeichenController.clear(),
-              reifen = null
+              });
+              _zeichenController.clear();
+              reifen = null;
             });
       }
       _showSnackBar("Kunde wird in die Tabelle hinzugefügt");

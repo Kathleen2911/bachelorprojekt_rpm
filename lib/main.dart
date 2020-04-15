@@ -4,7 +4,7 @@ import 'package:bachelorprojektrpm/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'mess_screen.dart';
+import 'measure_screen.dart';
 
 void main() {
   runApp(FlutterBlueApp());
