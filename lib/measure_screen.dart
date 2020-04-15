@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bachelorprojektrpm/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:neumorphic/neumorphic.dart';
 
 import 'dbmanager.dart';
 import 'models/controller.dart';
@@ -40,7 +40,6 @@ class _MessScreenState extends State<MessScreen> {
   List<bool> _startIsPressed = [false, false, false, false];
   List<bool> _stopIsPressed = [false, false, false, false];
 
-
   @override
   // wird bei Start der App ausgeführt
   void initState() {
@@ -52,8 +51,6 @@ class _MessScreenState extends State<MessScreen> {
 
     widget.device.discoverServices();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -140,16 +137,28 @@ class _MessScreenState extends State<MessScreen> {
                 return Column(children: <Widget>[
                   Row(
                     children: <Widget>[
-                      Expanded(child: buildCard(services, valFrontLeft, "VORNE LINKS", 0),),
-                      Expanded(child: buildCard(services, valFrontRight, "VORNE RECHTS", 1),),
+                      Expanded(
+                        child:
+                            buildCard(services, valFrontLeft, "VORNE LINKS", 0),
+                      ),
+                      Expanded(
+                        child: buildCard(
+                            services, valFrontRight, "VORNE RECHTS", 1),
+                      ),
                     ],
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                     child: Row(
                       children: <Widget>[
-                        Expanded(child: buildCard(services, valBackLeft, "HINTEN LINKS", 2),),
-                        Expanded(child: buildCard(services, valBackRight, "HINTEN RECHTS", 3),),
+                        Expanded(
+                          child: buildCard(
+                              services, valBackLeft, "HINTEN LINKS", 2),
+                        ),
+                        Expanded(
+                          child: buildCard(
+                              services, valBackRight, "HINTEN RECHTS", 3),
+                        ),
                       ],
                     ),
                   ),
@@ -187,127 +196,44 @@ class _MessScreenState extends State<MessScreen> {
 
   // Neumorphic Measure Cards
   buildCard(List<BluetoothService> services, var wheel, var title, int index) {
-    return Padding(
-      padding: const EdgeInsets.all(15.0),
-      child: NeuCard(
-        width: 150,
-        height: 140,
-        curveType: CurveType.concave,
-        bevel: 6,
-        decoration:
-            NeumorphicDecoration(borderRadius: BorderRadius.circular(8)),
-        child: Column(
-          children: <Widget>[
-            StreamBuilder(
-              stream: wheel.stream,
-              initialData: "0",
-              builder: (BuildContext ctx, AsyncSnapshot snapshot) {
-                if (snapshot.hasData && !snapshot.hasError) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 15, bottom: 10),
-                    child: Column(
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(
-                            "RAD " + title + ":",
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: Theme.of(context).accentColor),
-                          ),
-                        ),
-                        Center(
-                          child: Text(snapshot.data,
-                              style: TextStyle(
-                                fontSize: 22,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                              maxLines: 1),
-                        ),
-                      ],
-                    ),
-                  );
-                } else {
-                  return Center(
-                    child: Text("Error occured in Stream"),
-                  );
+    return MeasureCard(
+      measureStream: wheel.stream,
+      title: title,
+      buttonBarChildren: <Widget>[
+        MeasureButton(
+          buttonText: "START",
+          onTap: () {
+            setState(() {
+              _startIsPressed[index] = !_startIsPressed[index];
+            });
+
+            for (BluetoothService service in services) {
+              if (service.uuid.toString().substring(4, 8) == "ffe0") {
+                for (char in service.characteristics) {
+                  if (char.uuid.toString().substring(4, 8) == "ffe1") {
+                    print("Found!");
+                    setNotification(char, wheel, index);
+                  }
                 }
-              },
-            ),
-
-
-            // Buttons zum Ändern des Messwertes
-            ButtonBar(
-              alignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _startIsPressed[index] = !_startIsPressed[index];
-                    });
-
-                    for (BluetoothService service in services) {
-                      if (service.uuid.toString().substring(4, 8) == "ffe0") {
-                        for (char in service.characteristics) {
-                          if (char.uuid.toString().substring(4, 8) == "ffe1") {
-                            print("Found!");
-                            setNotification(char, wheel, index);
-
-                          }
-                        }
-                      }
-                    }
-                  },
-                  child: NeuCard(
-                    padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
-                    curveType: _startIsPressed[index] ? CurveType.flat : CurveType.concave,
-                    bevel: 7,
-                    decoration: NeumorphicDecoration(
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Center(
-                      child: Text(
-                        "START",
-                        style: TextStyle(
-                          color: _startIsPressed[index] ? Theme.of(context).primaryColor : Theme.of(context).accentColor,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _stopIsPressed[index] = !_stopIsPressed[index];
-                    });
-
-                    char.setNotifyValue(!char.isNotifying);
-                    messung[index] = tmp;
-                    wheel.close();
-                  },
-                  child: NeuCard(
-                    padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 18.0),
-                    curveType: _stopIsPressed[index] ? CurveType.flat : CurveType.concave,
-                    bevel: 7,
-                    decoration: NeumorphicDecoration(
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Center(
-                      child: Text(
-                        "STOP",
-                        style: TextStyle(
-                          color: _stopIsPressed[index] ? Theme.of(context).primaryColor : Theme.of(context).accentColor,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              }
+            }
+          },
         ),
-      ),
+        MeasureButton(
+          buttonText: "STOP",
+          onTap: () {
+            setState(() {
+              _stopIsPressed[index] = !_stopIsPressed[index];
+            });
+
+            char.setNotifyValue(!char.isNotifying);
+            messung[index] = tmp;
+            wheel.close();
+          },
+        )
+      ],
     );
+
   }
 
   void _submit(BuildContext context) {
@@ -336,23 +262,23 @@ class _MessScreenState extends State<MessScreen> {
             hl: messung[2],
             hr: messung[3]);
         dbmanager.insertReifen(rf).then((id) {
-              _zeichenController.clear();
-              print('Reifen wurde in die Datenbank Nummer $id hinzugefügt');
-            });
+          _zeichenController.clear();
+          print('Reifen wurde in die Datenbank Nummer $id hinzugefügt');
+        });
       } else {
         reifen.zeichen = _zeichenController.text;
 
         dbmanager.updateReifen(reifen).then((id) {
-              setState(() {
-                reifenList[updateIndex].zeichen = _zeichenController.text;
-                reifenList[updateIndex].vl = messung[0];
-                reifenList[updateIndex].vr = messung[1];
-                reifenList[updateIndex].hl = messung[2];
-                reifenList[updateIndex].hr = messung[3];
-              });
-              _zeichenController.clear();
-              reifen = null;
-            });
+          setState(() {
+            reifenList[updateIndex].zeichen = _zeichenController.text;
+            reifenList[updateIndex].vl = messung[0];
+            reifenList[updateIndex].vr = messung[1];
+            reifenList[updateIndex].hl = messung[2];
+            reifenList[updateIndex].hr = messung[3];
+          });
+          _zeichenController.clear();
+          reifen = null;
+        });
       }
       _showSnackBar("Kunde wird in die Tabelle hinzugefügt");
       formController.submitForm(kundenForm);
